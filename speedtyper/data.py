@@ -1,3 +1,5 @@
+import curses 
+
 class Keys:
     # reference for ascii table: https://theasciicode.com.ar/
     # useful arrays.
@@ -6,7 +8,7 @@ class Keys:
     # keys.
     space = 32
     esc = 27
-    backspace = 8
+    backspace = [8, 127, curses.KEY_BACKSPACE]
 
     num_1 = 49
     num_2 = 50

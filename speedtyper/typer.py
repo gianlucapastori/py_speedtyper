@@ -1,4 +1,5 @@
 import curses 
+import time 
 import random
 from data import Data, Keys
 
@@ -12,9 +13,13 @@ class Typer:
         self.set_array = []
         self.typed_array = []
         self.state = 0
-        self.set_number = 15
-        self.lang = "default"
+        self.set_number = 16
+        self.lang = "en"
         self.array_words = []
+        self.timer = 0
+        self.start_time = 0
+        self.end_time = 0
+        self.on_typing = 0
         # data related.
         self.keys = Keys()
         self.data = Data()
@@ -34,11 +39,13 @@ class Typer:
             # 2 = grey on black  // non-typed
             # 3 = red on black   // error
             # 4 = blue on black  // special
+            # 5 = black on white // cursor
             # reference: https://i.stack.imgur.com/KTSQa.png
             curses.init_pair(1, 15, -1)
             curses.init_pair(2, 7, -1)
             curses.init_pair(3, 9, -1)
             curses.init_pair(4, 6, -1)
+            curses.init_pair(4, 0, 255)
 
     def on_key(self, ch) -> None:
         if ch == self.keys.esc:
@@ -54,10 +61,23 @@ class Typer:
         elif self.state == 2:
             if ch == self.keys.num_1:
                 self.change_lang("en")
+                self.state = 0
             elif ch == self.keys.num_2:
                 self.change_lang("br")
+                self.state = 0
 
-    def draw(self) -> None:
+    def on_tick(self, time) -> None:
+        if self.state == 1:
+            self.typer_tick(time)
+
+    def typer_tick(self, time) -> None:
+        if len(self.typed_array )
+            if self.start_time == 0:
+                self.start_time = time
+        if len(self.typed_array) == len(self.set_array):
+            self.end_time = time
+
+    def on_draw(self) -> None:
         if self.state == 0:
             self.draw_menu()
         elif self.state == 1:
@@ -67,29 +87,38 @@ class Typer:
 
     def draw_typer(self) -> None:
         for i in range(len(self.set_array)):
-            self.stdscr.addstr(str(self.set_array[i]))
+            if i == len(self.typed_array):
+                self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(4))
+                continue
+            if len(self.typed_array) > i:
+                if self.typed_array[i] == self.set_array[i]:
+                    self.stdscr.addstr(str(self.set_array[i]))
+                else:
+                    self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(3))
+            else:
+                self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(2))
 
     def draw_menu(self) -> None:
         self.stdscr.addstr("created by gianlucapastori\n")
         self.stdscr.addstr("welcome to")
-        self.stdscr.addstr(" speedtyper! ", curses.color_pair(4))
+        self.stdscr.addstr(" speedtyper! ", curses.color_pair(3))
         self.stdscr.addstr("what do you want do do?\n")
-
         self.stdscr.addstr("(1). Start Words per Minute Typing Test\n")
-        self.stdscr.addstr("(2). Change test language\n")
+        self.stdscr.addstr("(2). Change test language ({})\n".format(str(self.lang)))
         self.stdscr.addstr("(3). cat README.md\n")
         self.stdscr.addstr("(ESC). exit\n")
 
     def populate_typed(self, ch) -> None:
         if ch in self.keys.alphabet:
-            self.typed_array.append(str(ch))
+            self.typed_array.append(str(chr(ch)))
         if ch == self.keys.space:
             self.typed_array.append(" ")
-        if ch == self.keys.backspace:
+        if ch in self.keys.backspace:
             self.typed_array.pop()
 
     def populate_set(self) -> None:
-        if self.lang == "default" or self.lang == "en":
+        self.set_array = []
+        if self.lang == "en":
             self.array_words = self.data.en_words
         elif self.lang == "br":
             self.array_words = self.data.br_words
@@ -98,10 +127,10 @@ class Typer:
             word = self.array_words[random.randint(0, len(self.array_words) - 1)] 
             for j in range(len(word)):
                 letter = word[j]
-                self.typed_array.append(letter)
+                self.set_array.append(letter)
 
             if i != 0 or i != self.set_number:
-                self.typed_array.append(" ")
+                self.set_array.append(" ")
 
     def draw_lang_selection(self) -> None:
         self.stdscr.addstr("select the language you want to make the test.\n")
@@ -124,5 +153,6 @@ class Typer:
         while True:
             self.stdscr.erase()
             self.on_key(ch)
-            self.draw()
+            self.on_draw()
+            self.on_tick(time.time())
             ch = self.stdscr.getch()
