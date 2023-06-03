@@ -19,7 +19,8 @@ class Typer:
         self.timer = 0
         self.start_time = 0
         self.end_time = 0
-        self.on_typing = 0
+        self.finished = 0
+        self.uncorrected_errors = 0
         # data related.
         self.keys = Keys()
         self.data = Data()
@@ -29,8 +30,6 @@ class Typer:
         curses.noecho()             
         # do not show terminal cursor.
         curses.curs_set(0)         
-        # delay to capture escape key.
-        curses.set_escdelay(1)    
         # check if terminal support colors.
         if curses.has_colors():
             curses.start_color()
@@ -43,7 +42,7 @@ class Typer:
             # reference: https://i.stack.imgur.com/KTSQa.png
             curses.init_pair(1, 15, -1)
             curses.init_pair(2, 7, -1)
-            curses.init_pair(3, 9, -1)
+            curses.init_pair(3, 9, 255)
             curses.init_pair(4, 6, -1)
             curses.init_pair(4, 0, 255)
 
@@ -58,6 +57,8 @@ class Typer:
                 self.state = 2
         elif self.state == 1:
             self.populate_typed(ch)
+            if ch == self.keys.num_2:
+                self.stdscr.addstr("\n\ntime: {}\nuncorrected errors: {}\n\n".format(self.timer,self.uncorrected_errors))
         elif self.state == 2:
             if ch == self.keys.num_1:
                 self.change_lang("en")
@@ -65,18 +66,23 @@ class Typer:
             elif ch == self.keys.num_2:
                 self.change_lang("br")
                 self.state = 0
+                        
 
     def on_tick(self, time) -> None:
         if self.state == 1:
             self.typer_tick(time)
 
     def typer_tick(self, time) -> None:
-        if len(self.typed_array )
+        if len(self.typed_array):
             if self.start_time == 0:
                 self.start_time = time
         if len(self.typed_array) == len(self.set_array):
-            self.end_time = time
-
+            self.timer = abs(self.start_time - time)
+            for i in range(len(self.set_array)):
+                if self.typed_array[i] != self.set_array[i]:
+                    self.uncorrected_errors += 1
+            self.state = 3
+    
     def on_draw(self) -> None:
         if self.state == 0:
             self.draw_menu()
@@ -84,7 +90,49 @@ class Typer:
             self.draw_typer()
         elif self.state == 2:
             self.draw_lang_selection()
+        elif self.state == 3:
+            self.draw_finish()
 
+    def draw_finish(self) -> None:
+        self.stdscr.addstr("your completed the test!\n")
+        self.stdscr.addstr("the time it take: {}\n".format(self.timer))
+        self.stdscr.addstr("your uncorrected errors: {}\n".format(self.uncorrected_errors))
+        
+        gross, net, accuracy = self.calculate_wpm()
+        
+        self.stdscr.addstr("your gross WPM: {}\n".format(gross))
+        self.stdscr.addstr("your net WPM: {}\n".format(net))
+        self.stdscr.addstr("your accuracy: {}%\n".format(accuracy))
+        self.stdscr.addstr("your accuracy: {}%\n".format(len(self.typed_array)))
+        
+        self.stdscr.addstr("\n")
+        
+        if net > 10 and net < 20:
+            self.stdscr.addstr("really really bad at typing :D")
+        elif net > 20 and net < 30:
+            self.stdscr.addstr("really bad at typing D:")
+        elif net > 30 and net < 40:
+            self.stdscr.addstr("bad at typing :(")
+        elif net > 40 and net < 50:
+            self.stdscr.addstr("youre the average typist, still bad.")
+        elif net > 50 and net < 60:
+            self.stdscr.addstr("yeah! your above average! congratualations!")
+        elif net > 60 and net < 70:
+            self.stdscr.addstr("the required speed for most job, a professional typer, indeed...")
+        elif net > 70 and net < 80:
+            self.stdscr.addstr("youre good good :)")
+        elif net > 80 and net < 90:
+            self.stdscr.addstr("youre very very god :O")
+        else:
+            self.stdscr.addstr("youre a god at typing")
+    
+    def calculate_wpm(self) -> (float, float, float):
+        gross = (len(self.typed_array) / 5) / (abs(self.timer / 60))
+        net = ((gross - self.uncorrected_errors) / (self.timer / 60))
+        accuracy = ((len(self.typed_array) / self.uncorrected_errors) * 100)
+        
+        return gross, net, accuracy
+        
     def draw_typer(self) -> None:
         for i in range(len(self.set_array)):
             if i == len(self.typed_array):
@@ -97,6 +145,9 @@ class Typer:
                     self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(3))
             else:
                 self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(2))
+        
+        if len(self.typed_array) == 0:
+            self.stdscr.addstr("\n\nthe timer will start when you start typing, and it will stop when you finish the set.")
 
     def draw_menu(self) -> None:
         self.stdscr.addstr("created by gianlucapastori\n")
@@ -129,8 +180,9 @@ class Typer:
                 letter = word[j]
                 self.set_array.append(letter)
 
-            if i != 0 or i != self.set_number:
-                self.set_array.append(" ")
+            self.set_array.append(" ")
+            
+        self.set_array.pop()
 
     def draw_lang_selection(self) -> None:
         self.stdscr.addstr("select the language you want to make the test.\n")
