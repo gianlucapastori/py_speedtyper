@@ -1,7 +1,8 @@
-import curses 
-import time 
+import curses
+import time
 import random
 from data import Data, Keys
+
 
 class Typer:
     def __init__(self) -> None:
@@ -27,9 +28,9 @@ class Typer:
 
         # curses initialization and setup.
         # do not echo last character.
-        curses.noecho()             
+        curses.noecho()
         # do not show terminal cursor.
-        curses.curs_set(0)         
+        curses.curs_set(0)
         # check if terminal support colors.
         if curses.has_colors():
             curses.start_color()
@@ -46,6 +47,9 @@ class Typer:
             curses.init_pair(4, 6, -1)
             curses.init_pair(4, 0, 255)
 
+    """on_key() handles the render, it checks the state of the
+    application and redirect it to the correspondent function"""
+
     def on_key(self, ch) -> None:
         if ch == self.keys.esc:
             exit()
@@ -58,7 +62,11 @@ class Typer:
         elif self.state == 1:
             self.populate_typed(ch)
             if ch == self.keys.num_2:
-                self.stdscr.addstr("\n\ntime: {}\nuncorrected errors: {}\n\n".format(self.timer,self.uncorrected_errors))
+                self.stdscr.addstr(
+                    "\n\ntime: {}\nuncorrected errors: {}\n\n".format(
+                        self.timer, self.uncorrected_errors
+                    )
+                )
         elif self.state == 2:
             if ch == self.keys.num_1:
                 self.change_lang("en")
@@ -66,11 +74,15 @@ class Typer:
             elif ch == self.keys.num_2:
                 self.change_lang("br")
                 self.state = 0
-                        
+
+    """on_tick() handles the logic, it checks the state of the
+    application and redirects it to the correspondent function"""
 
     def on_tick(self, time) -> None:
         if self.state == 1:
             self.typer_tick(time)
+
+    """typer_tick() handles the logic behind the "typer" state."""
 
     def typer_tick(self, time) -> None:
         if len(self.typed_array):
@@ -82,7 +94,10 @@ class Typer:
                 if self.typed_array[i] != self.set_array[i]:
                     self.uncorrected_errors += 1
             self.state = 3
-    
+
+    """on_draw() handles the render, it checks the state of the
+    application and redirects it to the correspondent function"""
+
     def on_draw(self) -> None:
         if self.state == 0:
             self.draw_menu()
@@ -93,46 +108,32 @@ class Typer:
         elif self.state == 3:
             self.draw_finish()
 
+    """draw_finish() renders the results screen."""
+
     def draw_finish(self) -> None:
         self.stdscr.addstr("your completed the test!\n")
-        self.stdscr.addstr("the time it take: {}\n".format(self.timer))
-        self.stdscr.addstr("your uncorrected errors: {}\n".format(self.uncorrected_errors))
-        
-        gross, net, accuracy = self.calculate_wpm()
-        
+        self.stdscr.addstr("the time it take: {} seconds\n".format(int(self.timer)))
+        self.stdscr.addstr(
+            "your uncorrected errors: {}\n".format(self.uncorrected_errors)
+        )
+
+        gross, accuracy = self.calculate_wpm()
+
         self.stdscr.addstr("your gross WPM: {}\n".format(gross))
-        self.stdscr.addstr("your net WPM: {}\n".format(net))
         self.stdscr.addstr("your accuracy: {}%\n".format(accuracy))
-        self.stdscr.addstr("your accuracy: {}%\n".format(len(self.typed_array)))
-        
+
         self.stdscr.addstr("\n")
-        
-        if net > 10 and net < 20:
-            self.stdscr.addstr("really really bad at typing :D")
-        elif net > 20 and net < 30:
-            self.stdscr.addstr("really bad at typing D:")
-        elif net > 30 and net < 40:
-            self.stdscr.addstr("bad at typing :(")
-        elif net > 40 and net < 50:
-            self.stdscr.addstr("youre the average typist, still bad.")
-        elif net > 50 and net < 60:
-            self.stdscr.addstr("yeah! your above average! congratualations!")
-        elif net > 60 and net < 70:
-            self.stdscr.addstr("the required speed for most job, a professional typer, indeed...")
-        elif net > 70 and net < 80:
-            self.stdscr.addstr("youre good good :)")
-        elif net > 80 and net < 90:
-            self.stdscr.addstr("youre very very god :O")
-        else:
-            self.stdscr.addstr("youre a god at typing")
-    
-    def calculate_wpm(self) -> (float, float, float):
-        gross = (len(self.typed_array) / 5) / (abs(self.timer / 60))
-        net = ((gross - self.uncorrected_errors) / (self.timer / 60))
-        accuracy = ((len(self.typed_array) / self.uncorrected_errors) * 100)
-        
-        return gross, net, accuracy
-        
+
+    """calculate_wpm() returns the value for gross wpm and accuracy."""
+
+    def calculate_wpm(self):
+        gross = len(self.typed_array) * 60 / (5 * self.timer)
+        accuracy = abs(int(self.uncorrected_errors / len(self.typed_array) * 100) - 100)
+
+        return gross, accuracy
+
+    """draw_typer() renders the test itself on the screen."""
+
     def draw_typer(self) -> None:
         for i in range(len(self.set_array)):
             if i == len(self.typed_array):
@@ -145,9 +146,13 @@ class Typer:
                     self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(3))
             else:
                 self.stdscr.addstr(str(self.set_array[i]), curses.color_pair(2))
-        
+
         if len(self.typed_array) == 0:
-            self.stdscr.addstr("\n\nthe timer will start when you start typing, and it will stop when you finish the set.")
+            self.stdscr.addstr(
+                "\n\nthe timer will start when you start typing, and it will stop when you finish the set."
+            )
+
+    """ draw_menu() renders the menu on the screen."""
 
     def draw_menu(self) -> None:
         self.stdscr.addstr("created by gianlucapastori\n")
@@ -159,6 +164,11 @@ class Typer:
         self.stdscr.addstr("(3). cat README.md\n")
         self.stdscr.addstr("(ESC). exit\n")
 
+    """
+    this function populates the "typed" array, the array that
+    will list all the input coming from the keyboard during the test
+    """
+
     def populate_typed(self, ch) -> None:
         if ch in self.keys.alphabet:
             self.typed_array.append(str(chr(ch)))
@@ -166,6 +176,11 @@ class Typer:
             self.typed_array.append(" ")
         if ch in self.keys.backspace:
             self.typed_array.pop()
+
+    """
+    this function populates the "set" array, the array that
+    contains the set of words that ll be used in the test.
+    """
 
     def populate_set(self) -> None:
         self.set_array = []
@@ -175,13 +190,13 @@ class Typer:
             self.array_words = self.data.br_words
 
         for i in range(self.set_number):
-            word = self.array_words[random.randint(0, len(self.array_words) - 1)] 
+            word = self.array_words[random.randint(0, len(self.array_words) - 1)]
             for j in range(len(word)):
                 letter = word[j]
                 self.set_array.append(letter)
 
             self.set_array.append(" ")
-            
+
         self.set_array.pop()
 
     def draw_lang_selection(self) -> None:
@@ -197,14 +212,20 @@ class Typer:
     def loop(self) -> None:
         self.stdscr.erase()
 
+        # populate ch with the default getch return value.
         ch = -1
 
         self.populate_set()
 
         # main loop.
         while True:
+            # erase screen content every iteration.
             self.stdscr.erase()
+            # this function listen to keyboard input and handles state changing.
             self.on_key(ch)
+            # this function handles everything related to rendering.
             self.on_draw()
+            # this function render everything related to logic.
             self.on_tick(time.time())
+            # get keyboard input and use it in the next iteration.
             ch = self.stdscr.getch()
