@@ -88,7 +88,7 @@ class Data:
         "atoalhado",
         "funicular",
         "zebu",
-        "adágio",
+        "adagio",
         "bilionario",
         "cinza",
         "jardim",
