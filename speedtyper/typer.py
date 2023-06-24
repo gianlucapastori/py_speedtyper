@@ -156,9 +156,19 @@ class Typer:
 
     def draw_menu(self) -> None:
         self.stdscr.addstr("created by gianlucapastori\n")
+        self.stdscr.addstr("==================================================================================\n")
+        self.stdscr.addstr("███████╗██████╗ ███████╗███████╗██████╗ ████████╗██╗   ██╗██████╗ ███████╗███████╗\n", curses.color_pair(4))
+        self.stdscr.addstr("██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗\n", curses.color_pair(4))
+        self.stdscr.addstr("███████╗██████╔╝█████╗  █████╗  ██║  ██║   ██║    ╚████╔╝ ██████╔╝█████╗  ██████╔╝\n", curses.color_pair(4))
+        self.stdscr.addstr("╚════██║██╔═══╝ ██╔══╝  ██╔══╝  ██║  ██║   ██║     ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗\n", curses.color_pair(4))
+        self.stdscr.addstr("███████║██║     ███████╗███████╗██████╔╝   ██║      ██║   ██║     ███████╗██║  ██║\n", curses.color_pair(4))
+        self.stdscr.addstr("╚══════╝╚═╝     ╚══════╝╚══════╝╚═════╝    ╚═╝      ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝\n", curses.color_pair(4))
+        self.stdscr.addstr("==================================================================================\n")
+        
         self.stdscr.addstr("welcome to")
-        self.stdscr.addstr(" speedtyper! ", curses.color_pair(3))
+        self.stdscr.addstr(" speedtyper! ")
         self.stdscr.addstr("what do you want do do?\n")
+        self.stdscr.addstr("==================================================================================\n")
         self.stdscr.addstr("(1). Start Words per Minute Typing Test\n")
         self.stdscr.addstr("(2). Change test language ({})\n".format(str(self.lang)))
         self.stdscr.addstr("(3). cat README.md\n")
